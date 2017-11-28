@@ -10,6 +10,7 @@ from certficates import getBase
 from dual import simplexDual
 from primal import simplexPrimal
 from primal import truncate
+from primal import truncate2
 from certficates import isBasicSolution
 from primal import buildAuxTableau
 import math
@@ -19,7 +20,7 @@ result2 = "OPT"
 optimal = [-float('inf'), [], []]
 status = True
 # region SimplexSolver
-epsilon = 0.000001
+epsilon = 0.0000001
 
 
 def isFPI(tableau: np, dimension):
@@ -63,8 +64,8 @@ def pivot(position: list, tableau: np):
                                                                             tableau[position[0], ...]
         aux += 1
 
-    #print(tableau)
-    #print()
+        # print(tableau)
+        # print()
 
 
 def makeFPI(tableau: np, size):
@@ -82,10 +83,10 @@ def solveSimplex(tableau: np, size):
     output = open('output.txt', 'w')
     # print("\n\nsolveSimplex")
     # print(tableau)
-    #i = 0
-    #for x in tableau:
-    #    tableau[i] = np.array([truncate(xi) for xi in x])
-    #    i += 1
+    i = 0
+    for x in tableau:
+        tableau[i] = np.array([truncate(xi) for xi in x])
+        i += 1
     # print("truncado")
     # print(tableau)
     # print("\n\n")
@@ -123,10 +124,10 @@ def solveSimplex(tableau: np, size):
 
         # if Primal was not effective or problem is not fully solved yet, attempt Auxiliary Method
         if not isBasicSolution(tableau, size) or returnPrimal == 1:
-            print("AUX")
+            print("-------------------------AUX--------------------------")
             # print(tableau)
             auxTableau = buildAuxTableau(tableau)
-            #print(auxTableau)
+            # print(auxTableau)
             # print()
             returnPrimal = simplexPrimal(auxTableau, size)
 
@@ -168,6 +169,7 @@ def solveSimplex(tableau: np, size):
 
     # Not valid certificate
     if returnDual == 3 or returnPrimal == 3:
+        print(tableau)
         printInvCertificate(invCertificate(tableau, size[0]), output)
         return "INV"
 
@@ -180,74 +182,81 @@ def almostInt(a):
     c = 1.0000000000000000000000000000000
     global epsilon
     if (a % c != 0):
-        b = (a%c)
-        #print(b)
+        b = (a % c)
+        # print(b)
         if b < epsilon or b + epsilon >= 1:
-            print("True %f" %b)
+            # print("True %f" %b)
             return True
         else:
-            print("False %f" % b)
+            # print("False %f" % b)
             return False
     else:
-        print("for a = %f" %a)
-        print("True %f" %(a %c))
+        # print("for a = %f" %a)
+        # print("True %f" %(a %c))
         return True
 
 
 def isPI(tableau: np, size):
     partSol = getX(tableau, getBase(tableau, size[0]), size[1])
-    #partSol = np.array([float(truncate(xi)) for xi in partSol])
+    # partSol = np.array([float(truncate(xi)) for xi in partSol])
     print("\nPartSol")
+    global optimal
     print(partSol)
-    #input()
+    # input()
     a = True
     col = -1
     lin = -1
     fv = -1
     for xi in partSol:
-        print("xi in partSol")
+        #print("xi in partSol")
         if not almostInt(xi):
             a = False
+    # input()
     if a and (partSol >= 0).all():
         print("TUDO INTEIRO POSITIVO")
-        print(partSol)
-        optimal[1] = partSol
-        optimal[2] = optimalCertificate(tableau, size[0])
+        #print(partSol)
+        a = 0
+        for i in optimal[1]:
+            optimal[1][a] = truncate2(i)
+            a+=1
+        optimal[1] = partSol if optimal[0] <= (-1 * tableau[0, tableau.shape[1] - 1]) else optimal[1]
+        optimal[2] = optimalCertificate(tableau, size[0]) if optimal[0] <= (-1 * tableau[0, tableau.shape[1] - 1]) else \
+        optimal[2]
         return [col, lin, fv, "INT"]
     elif a and (partSol < 0).any():
         print("Tem negativo no B e B todo inteiro!")
-        print(partSol)
+        #print(partSol)
         return [col, lin, fv, "NEGINT"]
     elif (partSol < 0).any():
         print("Tem negativo no B! E B não é todo inteiro!")
-        print(partSol)
+        #print(partSol)
         l = [s % 1 for s in partSol]
         m = min(i for i in l if i != 0 and not almostInt(i))
         col = np.where(l == m)[0][0]
-        print("COL")
-        print(col)
-        #gc = input()
+        #print("COL")
+        #print(col)
+        # gc = input()
         lin = np.transpose((tableau[1:tableau.shape[0], col] == 1).nonzero())
         lin = lin[0][0] + 1
-        print("lin")
-        print(lin)
+        #print("lin")
+        #print(lin)
         fv = partSol[col]
         returnVL = [lin, col, fv, "NEGNINT"]
         return returnVL
     else:
         print("B positivo! E B não é todo inteiro!")
-        print(partSol)
+        #print(partSol)
         l = [s % 1 for s in partSol]
-        print(l)
+        #print(l)
         m = min(i for i in l if i != 0 and not almostInt(i))
         col = np.where(l == m)[0][0]
-        print("COL")
-        print(col)
-        gc = input()
+        #print("COL")
+        #print(col)
+        # gc = input()
         lin = np.transpose((tableau[1:tableau.shape[0], col] == 1).nonzero())
         lin = lin[0][0] + 1
-        print("lin")
-        print(lin)
+        #print("lin")
+        #print(lin)
         fv = partSol[col]
         returnVL = [lin, col, fv, "NINT"]
         return returnVL
@@ -261,19 +270,19 @@ def addBnBRest(tableau: np, tuple, size, type):
     rest[tuple[1]] = 1 if type == '<' else -1
     rest[tableau.shape[1] - 2] = 1
     rest[tableau.shape[1] - 1] = math.floor(tuple[2]) if type == '<' else -1 * math.ceil(tuple[2])
-    #print("\nREST")
-    #print(rest)
-    #print(type)
-    #print(tableau[tuple[0], :])
-    #print("\n")
+    # print("\nREST")
+    # print(rest)
+    # print(type)
+    # print(tableau[tuple[0], :])
+    # print("\n")
     rest = (rest - tableau[tuple[0], :]) if type == '<' else (rest + tableau[tuple[0], :])
-    #print("\nREST Pivoteado")
-    #print(rest)
-    #print("\n")
+    # print("\nREST Pivoteado")
+    # print(rest)
+    # print("\n")
     tableau = np.vstack((tableau, rest))
-    #print("\nTableau Resultante")
-    #print(tableau)
-    #print("\n")
+    # print("\nTableau Resultante")
+    # print(tableau)
+    # print("\n")
     # a = input()
     return tableau
 
@@ -284,25 +293,37 @@ def addCutPlanRest(tableau: np, tuple, size):
     tableau = np.hstack((tableau[0], slack, tableau[1]))
     rest = np.zeros((1, tableau.shape[1]))[0]
     print(tuple)
-    #input()
+    # input()
+    # slack2 = np.zeros((tableau.shape[1], 1))
+    print(tableau)
+    # rest2 = tableau[tuple[0], :size[1]].copy()
+    # a = 0
+    # for i in rest2:
+    #  slack2[a] = i
+    #  a+=1
+    # print(slack2)
+    # print(rest2)
+    # input()
     rest = tableau[tuple[0], :].copy()
-    print("REST PRE FLOOR")
-    print(rest)
+    # rest3 = np.transpose(slack2)[0]
+    # rest[tableau.shape[1]-1] = rest3[tableau.shape[1]-1]
+    #print("REST PRE FLOOR")
+    #print(rest)
     rest = np.floor(rest)
     rest[tableau.shape[1] - 2] = 1
-    print("Rest Inicial")
-    print(rest)
+    #print("Rest Inicial")
+    #print(rest)
     rest = (rest - tableau[tuple[0], :])
-    print("Rest Pivoteado")
-    print(rest)
+    #print("Rest Pivoteado")
+    #print(rest)
     tableau = np.vstack((tableau, rest))
     print("New Tableau")
     print(tableau)
-    #gc = input()
+    # gc = input()
     return tableau
 
 
-def pickPivotCutPlan(tableau : np, size):
+def pickPivotCutPlan(tableau: np, size):
     aux1 = 1
     position = [-1, -1]
     cont = 0
@@ -341,79 +362,86 @@ def pickPivotCutPlan(tableau : np, size):
 
     return position
 
+
 def branchAndBound(tableau: np, size):
-    # if size[0] < 50:
-    size1 = size.copy()
-    size2 = size.copy()
-    tableau1 = tableau.copy()
-    tableau2 = tableau.copy()
-    global optimal
-    global result1
-    global result2
-    global status
-    print("\n\n----------------Branch and Bound Simplex-----------------\n")
-    print(tableau1)
-    tuple = isPI(tableau1, size)
-    if tuple[3] == "INT":
-        print("Inteiro")
-        if optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
-            optimal[0] = (-1 * tableau1[0, tableau1.shape[1] - 1])
-    elif tuple[3] == "NEGINT":
-        input()
-        print("Negative Inteiro")
+    if size[0] < 25:
+        size1 = size.copy()
+        size2 = size.copy()
+        tableau1 = tableau.copy()
+        tableau2 = tableau.copy()
+        global optimal
+        global result1
+        global result2
+        global status
+        print("\n\n----------------Branch and Bound Simplex-----------------\n")
         print(tableau1)
-        print("pos Dual")
-        simplexDual(tableau1, size1)
-        result1 = solveSimplex(tableau1, size1)
-        simplexDual(tableau2, size2)
-        result2 = solveSimplex(tableau2, size2)
-        print(tableau1)
-        branchAndBound(tableau1, size1)
-        branchAndBound(tableau2, size2)
-    elif tuple[3] == "NEGNINT" and result1 == "OPT":
-        print("Negative Nao Inteiro")
-        print(tableau1)
-        print("pos Dual")
-        pos = pickPivotCutPlan(tableau1, size1)
-        pivot(pos, tableau1)
-        pos = pickPivotCutPlan(tableau2, size2)
-        print(tableau1)
-        tableau1 = addBnBRest(tableau1, tuple, size1, '<')
-        tableau2 = addBnBRest(tableau2, tuple, size2, '>')
-        print(tableau1)
-        size1[0] += 1
-        size2[0] += 1
-        print(tuple)
-        # gc = input()
-        result1 = solveSimplex(tableau1, size1)
-        result1 = solveSimplex(tableau1, size2)
-        print("Tableau pos solve")
-        print(tableau1)
-        # gc = input()
-        cutPlanSimplex(tableau1, size1)
-    elif tuple[3] == "NINT" and (result1 == "OPT" or result2 == "OPT"):
-        print("Nao Inteiro <")
-        print(tableau1)
-        simplexDual(tableau1, size1)
-        simplexDual(tableau2, size2)
-        print(tableau1)
-        tableau1 = addBnBRest(tableau1, tuple, size1, '<')
-        tableau2 = addBnBRest(tableau2, tuple, size2, '>')
-        size2[0] += 1
-        size1[0] += 1
-        print(tuple)
-        simplexDual(tableau1, size1)
-        simplexDual(tableau2, size1)
-        result1 = solveSimplex(tableau1, size1)
-        result2 = solveSimplex(tableau2, size2)
-        print("Tableau pos solve")
-        print(tableau1)
-        # gc = input()
-        branchAndBound(tableau1, size1)
-        branchAndBound(tableau2, size2)
+        tuple = isPI(tableau1, size)
+        print(optimal)
+        print((-1 * tableau1[0, tableau1.shape[1] - 1]))
+        # input()
+        if tuple[3] == "INT":
+            #print("Inteiro")
+            if optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
+                optimal[0] = (-1 * tableau1[0, tableau1.shape[1] - 1])
+        elif tuple[3] == "NEGINT" and optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
+            # input()
+            #print("Negative Inteiro")
+            #print(tableau1)
+            #print("pos Dual")
+            simplexDual(tableau1, size1)
+            result1 = solveSimplex(tableau1, size1)
+            simplexDual(tableau2, size2)
+            result2 = solveSimplex(tableau2, size2)
+            print(tableau1)
+            branchAndBound(tableau1, size1)
+            branchAndBound(tableau2, size2)
+        elif tuple[3] == "NEGNINT" and result1 == "OPT" and optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
+            #print("Negative Nao Inteiro")
+            #print(tableau1)
+            #print("pos Dual")
+            pos = pickPivotCutPlan(tableau1, size1)
+            pivot(pos, tableau1)
+            pos = pickPivotCutPlan(tableau2, size2)
+            pivot(pos , tableau2)
+            #print(tableau1)
+            tableau1 = addBnBRest(tableau1, tuple, size1, '<')
+            tableau2 = addBnBRest(tableau2, tuple, size2, '>')
+            #print(tableau1)
+            size1[0] += 1
+            size2[0] += 1
+            #print(tuple)
+            # gc = input()
+            result1 = solveSimplex(tableau1, size1)
+            branchAndBound(tableau1, size1)
+            result1 = solveSimplex(tableau1, size2)
+            #print("Tableau pos solve")
+            #print(tableau1)
+            # gc = input()
+            branchAndBound(tableau2, size2)
+        elif tuple[3] == "NINT" and result1 == "OPT" and optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
+            #print("Nao Inteiro <")
+            #print(tableau1)
+            simplexDual(tableau1, size1)
+            simplexDual(tableau2, size2)
+            print(tableau1)
+            tableau1 = addBnBRest(tableau1, tuple, size1, '<')
+            tableau2 = addBnBRest(tableau2, tuple, size2, '>')
+            size2[0] += 1
+            size1[0] += 1
+            #print(tuple)
+            simplexDual(tableau1, size1)
+            simplexDual(tableau2, size1)
+            result1 = solveSimplex(tableau1, size1)
+            #print("Tableau pos solve")
+            #print(tableau1)
+            # gc = input()
+            branchAndBound(tableau1, size1)
+            result1 = solveSimplex(tableau2, size2)
+            branchAndBound(tableau2, size2)
+
 
 def cutPlanSimplex(tableau: np, size):
-    # if size[0] < 50:
+    # if size[0] < 25:
     size1 = size.copy()
     tableau1 = tableau.copy()
     global optimal
@@ -422,47 +450,51 @@ def cutPlanSimplex(tableau: np, size):
     print("\n\n----------------Cut Plans Simplex-----------------\n")
     print(tableau1)
     tuple = isPI(tableau1, size)
+    #print(tuple)
+    #input()
     if tuple[3] == "INT":
-        print("Inteiro")
-        if optimal[0] <= (-1 * tableau1[0, tableau1.shape[1]-1]):
-            optimal[0] = (-1 * tableau1[0, tableau1.shape[1]-1])
-    elif tuple[3] == "NEGINT":
-        print("Negative Inteiro")
-        print(tableau1)
-        print("pos Dual")
+        #print("Inteiro")
+        if optimal[0] <= (-1 * tableau1[0, tableau1.shape[1] - 1]):
+            optimal[0] = (-1 * tableau1[0, tableau1.shape[1] - 1])
+    elif tuple[3] == "NEGINT" and result1 == "OPT":
+        #print("Negative Inteiro")
+        #print(tableau1)
+        #print("pos Dual")
         simplexDual(tableau1, size1)
-        print(tableau1)
-        #gc = input()
+        #print(tableau1)
+        # gc = input()
         cutPlanSimplex(tableau1, size1)
     elif tuple[3] == "NEGNINT" and result1 == "OPT":
-        print("Negative Nao Inteiro")
-        print(tableau1)
-        print("pos Dual")
+        #print("Negative Nao Inteiro")
+        #print(tableau1)
+        #print("pos Dual")
         pos = pickPivotCutPlan(tableau1, size1)
         pivot(pos, tableau1)
-        print(tableau1)
+        #print(tableau1)
         tableau1 = addCutPlanRest(tableau1, tuple, size1)
-        print(tableau1)
+        #print(tableau1)
         size1[0] += 1
-        print(tuple)
-        #gc = input()
+        #print(tuple)
+        # gc = input()
         result1 = solveSimplex(tableau1, size1)
-        print("Tableau pos solve")
-        print(tableau1)
-        #gc = input()
+        #print("Tableau pos solve")
+        #print(tableau1)
+        # gc = input()
         cutPlanSimplex(tableau1, size1)
     elif tuple[3] == "NINT" and result1 == "OPT":
         print("Nao Inteiro")
-        print(tableau1)
+        #print(tableau1)
         tableau1 = addCutPlanRest(tableau1, tuple, size1)
         size1[0] += 1
-        print(tuple)
+        #print(tuple)
         simplexDual(tableau1, size1)
         result1 = solveSimplex(tableau1, size1)
-        print("Tableau pos solve")
-        print(tableau1)
-        #gc = input()
+        #print("Tableau pos solve")
+        #print(tableau1)
+        # gc = input()
         cutPlanSimplex(tableau1, size1)
+    elif result1 =="INV" or result1 == "UNB":
+        print ("WAT")
 
 
 

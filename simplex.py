@@ -17,9 +17,9 @@ from simplexsolver import solveSimplex
 from simplexsolver import cutPlanSimplex
 from simplexsolver import branchAndBound
 from simplexsolver import optimal
+from simplexsolver import result1
+from primal import truncate2
 from certficates import printIntSolution
-
-
 
 
 
@@ -45,19 +45,23 @@ simplex = np.asarray(line3list, dtype=float)
 size = [int(line1), int(line2)]
 funcOption = int(line0)
 # endregion
-
+global result1
 #region 'Main'
 simplex = makeFPI(simplex, size)
 print("\n---------------- INÍCIO RELAXAÇÃO LINEAR ---------------------\n")
-solveSimplex(simplex, size)
+result1 = solveSimplex(simplex, size)
 print("\n\n\n---------------- FIM RELAXAÇÃO LINEAR ------------------------\n")
-if (funcOption == 0):
+if (funcOption == 0) and result1 =="OPT":
   cutPlanSimplex(simplex, size)
-else:
+elif result1 == "OPT":
   branchAndBound(simplex, size)
 #endregion
 #printIntSolution(optimal[1], optimal[0], optimal[2])
 if optimal[1] != []:
-  printIntSolution(optimal[1], optimal[0], optimal[2])
+  a = 0
+  for i in optimal[1]:
+      optimal[1][a] = truncate2(i)
+      a+=1
+  printIntSolution(optimal[1], truncate2(optimal[0]), optimal[2])
 else:
   print("não achou sol inteira")

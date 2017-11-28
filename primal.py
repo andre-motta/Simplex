@@ -8,12 +8,21 @@ import math as Math
 # region SimplexPrimal and Auxiliary
 def truncate(f):
     # '''Truncates/pads a float f to n decimal places without rounding'''
-    f = round(f, 10)
+    f = round(f, 8)
     s = '{}'.format(f)
     if 'e' in s or 'E' in s:
-        return '{0:.{1}f}'.format(f, 10)
+        return '{0:.{1}f}'.format(f, 8)
     i, p, d = s.partition('.')
-    return '.'.join([i, (d + '0' * 10)[:10]])
+    return '.'.join([i, (d + '0' * 8)[:8]])
+
+def truncate2(f):
+    # '''Truncates/pads a float f to n decimal places without rounding'''
+    f = round(f, 3)
+    s = '{}'.format(f)
+    if 'e' in s or 'E' in s:
+        return '{0:.{1}f}'.format(f, 3)
+    i, p, d = s.partition('.')
+    return '.'.join([i, (d + '0' * 3)[:3]])
 
 
 def pivotP(position: list, tableau: np):
