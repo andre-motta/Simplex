@@ -294,19 +294,20 @@ def addCutPlanRest(tableau: np, tuple, size):
     rest = np.zeros((1, tableau.shape[1]))[0]
     print(tuple)
     # input()
-    # slack2 = np.zeros((tableau.shape[1], 1))
+    slack2 = np.zeros((tableau.shape[1], 1))
     print(tableau)
-    # rest2 = tableau[tuple[0], :size[1]].copy()
-    # a = 0
-    # for i in rest2:
-    #  slack2[a] = i
-    #  a+=1
+    rest2 = tableau[tuple[0], :size[1]].copy()
+    a = 0
+    for i in rest2:
+     slack2[a] = i
+     a+=1
     # print(slack2)
     # print(rest2)
     # input()
-    rest = tableau[tuple[0], :].copy()
-    # rest3 = np.transpose(slack2)[0]
-    # rest[tableau.shape[1]-1] = rest3[tableau.shape[1]-1]
+    #rest = tableau[tuple[0], :].copy()
+    rest3 = tableau[tuple[0], :].copy()
+    rest = np.transpose(slack2)[0]
+    rest[tableau.shape[1]-1] = rest3[tableau.shape[1]-1]
     #print("REST PRE FLOOR")
     #print(rest)
     rest = np.floor(rest)
